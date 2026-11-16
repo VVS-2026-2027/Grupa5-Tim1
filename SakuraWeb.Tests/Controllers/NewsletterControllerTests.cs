@@ -5,6 +5,9 @@ using Moq;
 using SakuraWeb.Controllers;
 using SakuraWeb.Models;
 using SakuraWeb.Tests.Helpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SakuraWeb.Services;
 
 namespace SakuraWeb.Tests.Controllers;
 
@@ -297,7 +300,21 @@ public class NewsletterControllerTests
         await db.SaveChangesAsync();
 
         // Pravimo mock konkretne klase EmailSender umjesto interfejsa IEmailSender
-        var concreteSenderMock = new Mock<SakuraWeb.Services.EmailSender>();
+        var emailOptions =
+    Options.Create(
+        new AuthMessageSenderOptions
+        {
+            FromEmail = "posiljalac@test.com",
+            AppPassword = "lozinka123"
+        });
+
+var logger =
+    Mock.Of<ILogger<EmailSender>>();
+
+var concreteSenderMock =
+    new Mock<EmailSender>(
+        emailOptions,
+        logger);
         
         var controller = new NewsletterController(db, concreteSenderMock.Object);
 

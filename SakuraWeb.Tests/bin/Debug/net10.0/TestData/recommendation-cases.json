@@ -1,0 +1,14 @@
+[
+  {
+    "answerIds": [1],
+    "expectedCount": 3
+  },
+  {
+    "answerIds": [1, 2],
+    "expectedCount": 3
+  },
+  {
+    "answerIds": [],
+    "expectedCount": 3
+  }
+]
