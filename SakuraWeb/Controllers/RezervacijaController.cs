@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SakuraWeb.Data;
 using SakuraWeb.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SakuraWeb.Services;
 using System.Security.Claims;
 
 namespace SakuraWeb.Controllers
@@ -17,16 +13,32 @@ namespace SakuraWeb.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailSender _emailSender;
+        private readonly RezervacijaAvailabilityService
+    _availabilityService;
 
-        public RezervacijaController(ApplicationDbContext context, IEmailSender emailSender)
+public RezervacijaController(
+    ApplicationDbContext context,
+    IEmailSender emailSender,
+    RezervacijaAvailabilityService?
+        availabilityService = null)
+{
+    _context = context;
+    _emailSender = emailSender;
+
+    _availabilityService =
+        availabilityService ??
+        new RezervacijaAvailabilityService();
+}
+
+        private static string FormatDatum(DateTime datum)
         {
-            _context = context;
-            _emailSender = emailSender;
+            return datum.ToString("dd.MM.yyyy.");
         }
 
-        private static string FormatDatum(DateTime datum) => datum.ToString("dd.MM.yyyy.");
-        private static string FormatVrijeme(DateTime vrijeme) => vrijeme.ToString("HH:mm");
-
+        private static string FormatVrijeme(DateTime vrijeme)
+        {
+            return vrijeme.ToString("HH:mm");
+        }
         // GET: Rezervacija
         [Authorize(Roles = "Administrator, Klijent, Frizer")]
         public async Task<IActionResult> Index()
@@ -145,117 +157,157 @@ namespace SakuraWeb.Controllers
 
         // GET: Rezervacija/Create
         [Authorize(Roles = "Klijent")]
-        public async Task<IActionResult> Create()
-        {
-            var usluge = await _context.usluge
-                .OrderBy(u => u.kategorija)
-                .ThenBy(u => u.naziv)
-                .ToListAsync();
+public async Task<IActionResult> Create()
+{
+    var usluge =
+        await _context.usluge
+            .OrderBy(u => u.kategorija)
+            .ThenBy(u => u.naziv)
+            .ToListAsync();
 
-            ViewBag.Usluge = usluge;
-            return View();
-        }
+    var frizeri =
+        await _context.korisnici
+            .Where(k => k.ulogaKorisnika == Uloga.Frizer)
+            .OrderBy(k => k.korisnickoIme)
+            .ToListAsync();
+
+    ViewBag.Usluge = usluge;
+    ViewBag.Frizeri = frizeri;
+
+    return View();
+}
 
         // POST: Rezervacija/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Klijent")]
-        public async Task<IActionResult> Create(DateTime datumRezervacije, TimeSpan pocetnoVrijeme, int uslugaId, string frizerId)
-        {
-            var usluga = await _context.usluge.FindAsync(uslugaId);
-            if (usluga == null)
-            {
-                ModelState.AddModelError("", "Odabrana usluga ne postoji.");
-                return await VratiCreateView();
-            }
+[ValidateAntiForgeryToken]
+[Authorize(Roles = "Klijent")]
+public async Task<IActionResult> Create(
+    DateTime datumRezervacije,
+    TimeSpan pocetnoVrijeme,
+    int uslugaId,
+    string frizerId)
+{
+    var usluga =
+        await _context.usluge.FindAsync(uslugaId);
 
-            var frizer = await _context.korisnici.FindAsync(frizerId);
-            if (frizer == null || frizer.ulogaKorisnika != Uloga.Frizer)
-            {
-                ModelState.AddModelError("", "Odabrani frizer ne postoji.");
-                return await VratiCreateView();
-            }
+    if (usluga == null)
+    {
+        ModelState.AddModelError(
+            "",
+            "Odabrana usluga ne postoji.");
 
-            int brojTermina = (int)Math.Ceiling(usluga.trajanje / 30.0);
+        return await VratiCreateView();
+    }
 
-            // Provjeri da svi potrebni termini nisu zauzeti
-            var potrebniTermini = new List<TimeSpan>();
-            for (int i = 0; i < brojTermina; i++)
-            {
-                potrebniTermini.Add(pocetnoVrijeme.Add(TimeSpan.FromMinutes(30 * i)));
-            }
+    var frizer =
+        await _context.korisnici.FindAsync(frizerId);
 
-            // Posljednji termin ne smije preci radno vrijeme (16:30 zadnji slot)
-            var krajRadnogVremena = new TimeSpan(16, 30, 0);
-            if (potrebniTermini.Last() > krajRadnogVremena)
-            {
-                ModelState.AddModelError("", "Odabrana usluga ne staje u radno vrijeme za odabrani termin.");
-                return await VratiCreateView();
-            }
+    if (frizer == null ||
+        frizer.ulogaKorisnika != Uloga.Frizer)
+    {
+        ModelState.AddModelError(
+            "",
+            "Odabrani frizer ne postoji.");
 
-            var pocetakDana = datumRezervacije.Date;
-            var krajDana = pocetakDana.AddDays(1);
+        return await VratiCreateView();
+    }
 
-            var zauzetiTermini = await _context.rezervacije
-                .Where(r => !r.otkazana
-                         && r.datumRezervacije >= pocetakDana
-                         && r.datumRezervacije < krajDana)
-                .Include(r => r.usluga)
-                .ToListAsync();
+    var pocetakDana =
+        datumRezervacije.Date;
 
-            var zauzetaVremena = new HashSet<TimeSpan>();
-            foreach (var rez in zauzetiTermini)
-            {
-                int brTermina = (int)Math.Ceiling(rez.usluga.trajanje / 30.0);
-                for (int i = 0; i < brTermina; i++)
-                {
-                    zauzetaVremena.Add(rez.vrijemeTermina.TimeOfDay.Add(TimeSpan.FromMinutes(30 * i)));
-                }
-            }
+    var krajDana =
+        pocetakDana.AddDays(1);
 
-            if (potrebniTermini.Any(t => zauzetaVremena.Contains(t)))
-            {
-                ModelState.AddModelError("", "Odabrani termin je zauzet. Molimo odaberite drugi termin.");
-                return await VratiCreateView();
-            }
+    var zauzetiTermini =
+        await _context.rezervacije
+            .Where(r =>
+                !r.otkazana &&
+                r.frizerId == frizerId &&
+                r.datumRezervacije >= pocetakDana &&
+                r.datumRezervacije < krajDana)
+            .Include(r => r.usluga)
+            .ToListAsync();
 
-            var klijentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var rezervacija = new Rezervacija
-            {
-                datumRezervacije = datumRezervacije.Date,
-                vrijemeTermina = datumRezervacije.Date.Add(pocetnoVrijeme),
-                otkazana = false,
-                ocjena = 0,
-                klijentId = klijentId,
-                frizerId = frizerId,
-                uslugaId = uslugaId
-            };
+    var provjeraTermina =
+        _availabilityService.Check(
+            datumRezervacije,
+            pocetnoVrijeme,
+            usluga,
+            frizerId,
+            zauzetiTermini);
 
-            _context.Entry(rezervacija).Property(r => r.id).IsTemporary = true;
+    if (!provjeraTermina.IsAvailable)
+    {
+        ModelState.AddModelError(
+            "",
+            provjeraTermina.ErrorMessage!);
 
-            _context.Add(rezervacija);
-            await _context.SaveChangesAsync();
+        return await VratiCreateView();
+    }
 
-            var klijent = await _context.korisnici.FindAsync(klijentId);
-            await _emailSender.SendEmailAsync(
-                klijent!.emailAdresa,
-                "[Sakura] Uspješna rezervacija",
-                $"Vaša rezervacija usluge \"{usluga.naziv}\" kod frizera {frizer.korisnickoIme} na datum {FormatDatum(rezervacija.datumRezervacije)} u {FormatVrijeme(rezervacija.vrijemeTermina)} sati je uspješna");
+    var klijentId =
+        User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
-            return RedirectToAction(nameof(Index));
-        }
+    var rezervacija = new Rezervacija
+    {
+        datumRezervacije =
+            datumRezervacije.Date,
 
-        private async Task<IActionResult> VratiCreateView()
-    
-        {
-            var usluge = await _context.usluge
-                .OrderBy(u => u.kategorija)
-                .ThenBy(u => u.naziv)
-                .ToListAsync();
+        vrijemeTermina =
+            datumRezervacije.Date
+                .Add(pocetnoVrijeme),
 
-            ViewBag.Usluge = usluge;
-            return View();
-        }
+        otkazana = false,
+        ocjena = 0,
+        klijentId = klijentId,
+        frizerId = frizerId,
+        uslugaId = uslugaId
+    };
+
+    _context.Entry(rezervacija)
+        .Property(r => r.id)
+        .IsTemporary = true;
+
+    _context.Add(rezervacija);
+
+    await _context.SaveChangesAsync();
+
+    var klijent =
+        await _context.korisnici
+            .FindAsync(klijentId);
+
+    await _emailSender.SendEmailAsync(
+        klijent!.emailAdresa,
+        "[Sakura] Uspješna rezervacija",
+        $"Vaša rezervacija usluge \"{usluga.naziv}\" " +
+        $"kod frizera {frizer.korisnickoIme} " +
+        $"na datum {FormatDatum(rezervacija.datumRezervacije)} " +
+        $"u {FormatVrijeme(rezervacija.vrijemeTermina)} " +
+        "sati je uspješna");
+
+    return RedirectToAction(nameof(Index));
+}
+
+       private async Task<IActionResult> VratiCreateView()
+{
+    var usluge =
+        await _context.usluge
+            .OrderBy(u => u.kategorija)
+            .ThenBy(u => u.naziv)
+            .ToListAsync();
+
+    var frizeri =
+        await _context.korisnici
+            .Where(k => k.ulogaKorisnika == Uloga.Frizer)
+            .OrderBy(k => k.korisnickoIme)
+            .ToListAsync();
+
+    ViewBag.Usluge = usluge;
+    ViewBag.Frizeri = frizeri;
+
+    return View();
+}
 
         // GET: Rezervacija/Edit/5
         [Authorize(Roles = "Administrator")]
@@ -353,31 +405,49 @@ namespace SakuraWeb.Controllers
 
         // GET: Rezervacija/ZauzetiTermini?datum=2026-06-15
         [HttpGet]
-        public async Task<IActionResult> ZauzetiTermini(DateTime datum)
+public async Task<IActionResult> ZauzetiTermini(
+    DateTime datum,
+    string? frizerId = null)
+{
+    var pocetakDana =
+        datum.Date;
+
+    var krajDana =
+        pocetakDana.AddDays(1);
+
+    var rezervacije =
+        await _context.rezervacije
+            .Where(r =>
+                !r.otkazana &&
+                (frizerId == null ||
+                 r.frizerId == frizerId) &&
+                r.datumRezervacije >= pocetakDana &&
+                r.datumRezervacije < krajDana)
+            .Include(r => r.usluga)
+            .ToListAsync();
+
+    var zauzeto =
+        new HashSet<string>();
+
+    foreach (var rez in rezervacije)
+    {
+        var brojTermina =
+            (int)Math.Ceiling(
+                rez.usluga.trajanje / 30.0);
+
+        for (var i = 0; i < brojTermina; i++)
         {
-            var pocetakDana = datum.Date;
-            var krajDana = pocetakDana.AddDays(1);
+            var vrijeme =
+                rez.vrijemeTermina.TimeOfDay
+                    .Add(TimeSpan.FromMinutes(30 * i));
 
-            var rezervacije = await _context.rezervacije
-                .Where(r => !r.otkazana
-                         && r.datumRezervacije >= pocetakDana
-                         && r.datumRezervacije < krajDana)
-                .Include(r => r.usluga)
-                .ToListAsync();
-
-            var zauzeto = new HashSet<string>();
-            foreach (var rez in rezervacije)
-            {
-                int brTermina = (int)Math.Ceiling(rez.usluga.trajanje / 30.0);
-                for (int i = 0; i < brTermina; i++)
-                {
-                    var vrijeme = rez.vrijemeTermina.TimeOfDay.Add(TimeSpan.FromMinutes(30 * i));
-                    zauzeto.Add(vrijeme.ToString(@"hh\:mm"));
-                }
-            }
-
-            return Json(zauzeto);
+            zauzeto.Add(
+                vrijeme.ToString(@"hh\:mm"));
         }
+    }
+
+    return Json(zauzeto);
+}
 
         private bool RezervacijaExists(int id)
         {

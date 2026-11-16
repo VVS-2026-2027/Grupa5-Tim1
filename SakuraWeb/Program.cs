@@ -26,8 +26,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<CustomEmailConfirmationTokenProvider<Korisnik>>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
-
-
+builder.Services.AddSingleton<ProizvodSearchService>();
+builder.Services.AddSingleton<RezervacijaAvailabilityService>();
+builder.Services.AddSingleton<ProizvodSearchService>();
+builder.Services.AddSingleton<RezervacijaAvailabilityService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

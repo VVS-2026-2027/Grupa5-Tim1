@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Scripting.Hosting;
 using Microsoft.EntityFrameworkCore;
 using SakuraWeb.Data;
 using SakuraWeb.Models;
+using SakuraWeb.Services;
 
 namespace SakuraWeb.Controllers
 {
@@ -15,44 +16,71 @@ namespace SakuraWeb.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+private readonly ProizvodSearchService _searchService;
 
-        public ProizvodiController(ApplicationDbContext context, IWebHostEnvironment environment)
-        {
-            _context = context;
-            _environment = environment;
-        }
+public ProizvodiController(
+    ApplicationDbContext context,
+    IWebHostEnvironment environment,
+    ProizvodSearchService? searchService = null)
+{
+    _context = context;
+    _environment = environment;
+    _searchService =
+        searchService ?? new ProizvodSearchService();
+}
 
         // GET: Proizvodi
-        public async Task<IActionResult> Index(string? sort, KategorijaProizvoda? kategorija)
-        {
-            IQueryable<Proizvod> query = _context.proizvodi;
+    public async Task<IActionResult> Index(
+    string? sort,
+    KategorijaProizvoda? kategorija,
+    string? pretraga = null)
+{
+    var proizvodi =
+        await _context.proizvodi.ToListAsync();
 
-            if (kategorija.HasValue && !kategorija.Equals("Sve"))
-            { 
-                query = query.Where(p => p.kategorija == kategorija);
-            }
+    var rezultat =
+        _searchService.Search(
+            proizvodi,
+            pretraga,
+            kategorija);
 
-            switch (sort)
-            {
-                case "CijenaUzlazno":
-                    query = query.OrderBy(p => p.cijena);
-                    break;
+    switch (sort)
+    {
+        case "CijenaUzlazno":
+            rezultat =
+                rezultat
+                    .OrderBy(p => p.cijena)
+                    .ToList();
+            break;
 
-                case "CijenaSilazno":
-                    query = query.OrderByDescending(p => p.cijena);
-                    break;
+        case "CijenaSilazno":
+            rezultat =
+                rezultat
+                    .OrderByDescending(p => p.cijena)
+                    .ToList();
+            break;
 
-                case "NazivUzlazno":
-                    query = query.OrderBy(p => p.naziv);
-                    break;
+        case "NazivUzlazno":
+            rezultat =
+                rezultat
+                    .OrderBy(p => p.naziv)
+                    .ToList();
+            break;
 
-                case "NazivSilazno":
-                    query = query.OrderByDescending(p => p.naziv);
-                    break;
-            }
+        case "NazivSilazno":
+            rezultat =
+                rezultat
+                    .OrderByDescending(p => p.naziv)
+                    .ToList();
+            break;
+    }
 
-            return View(await query.ToListAsync());
-        }
+    ViewBag.Sort = sort;
+    ViewBag.Kategorija = kategorija;
+    ViewBag.Pretraga = pretraga;
+
+    return View(rezultat);
+}
 
         // GET: Proizvodi/Details/5
         public async Task<IActionResult> Details(int? id)
