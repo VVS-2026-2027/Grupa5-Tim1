@@ -14,6 +14,7 @@
 
   <!-- 3. Povezivanje sa glavnim projektom -->
   <ItemGroup>
+    <ProjectReference Include="..\SakuraWeb\SakuraWeb.csproj" />
     <ProjectReference Include="C:\Users\User\OneDrive\Desktop\Grupa5-Tim1\SakuraWeb\SakuraWeb.csproj" />
   </ItemGroup>
 
