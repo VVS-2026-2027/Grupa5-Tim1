@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+	  <Exclude>[SakuraWeb]AspNetCoreGeneratedDocument.*,[SakuraWeb]SakuraWeb.Migrations.*,[SakuraWeb]SakuraWeb.Areas.*</Exclude>
+	  <ExcludeByFile>**/Program.cs,**/Migrations/*.cs,**/Areas/**/*.cs</ExcludeByFile>
   </PropertyGroup>
 
   <!-- 2. ASP.NET Core referenca -->
@@ -14,8 +16,7 @@
 
   <!-- 3. Povezivanje sa glavnim projektom -->
   <ItemGroup>
-    <ProjectReference Include="..\SakuraWeb\SakuraWeb.csproj" />
-    <ProjectReference Include="C:\Users\User\OneDrive\Desktop\Grupa5-Tim1\SakuraWeb\SakuraWeb.csproj" />
+	  <ProjectReference Include="..\SakuraWeb\SakuraWeb.csproj" />
   </ItemGroup>
 
   <!-- 4. Paketi (očišćeni duplikati, ostavljene tvoje novije verzije) -->

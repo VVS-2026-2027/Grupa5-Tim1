@@ -69,11 +69,16 @@ public class EmailSender : IEmailSender
 
         try
         {
-            await smtpClient.SendMailAsync(mailMessage);
+            await SendMailAsync(smtpClient, mailMessage);
         }
         catch (Exception e)
         {
             Console.WriteLine($"Exception caught in SendEmailAsync(): {e}");
         }
+    }
+
+    protected virtual Task SendMailAsync(SmtpClient smtpClient, MailMessage mailMessage)
+    {
+        return smtpClient.SendMailAsync(mailMessage);
     }
 }
