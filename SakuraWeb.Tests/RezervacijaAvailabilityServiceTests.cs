@@ -241,7 +241,7 @@ public class RezervacijaAvailabilityServiceTests
 
         Assert.False(rezultat.IsAvailable);
         Assert.Equal(
-            "Termin mora početi na puni sat ili pola sata.",
+            "Termin mora poceti na puni sat ili pola sata.",
             rezultat.ErrorMessage);
     }
 
