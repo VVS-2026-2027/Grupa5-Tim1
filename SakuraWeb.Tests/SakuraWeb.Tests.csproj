@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+	  <Exclude>[SakuraWeb]AspNetCoreGeneratedDocument.*,[SakuraWeb]SakuraWeb.Migrations.*,[SakuraWeb]SakuraWeb.Areas.*</Exclude>
+	  <ExcludeByFile>**/Program.cs,**/Migrations/*.cs,**/Areas/**/*.cs</ExcludeByFile>
   </PropertyGroup>
 
   <!-- 2. ASP.NET Core referenca -->

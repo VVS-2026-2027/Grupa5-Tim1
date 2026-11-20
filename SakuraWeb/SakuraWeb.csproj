@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	 
     <UserSecretsId>aspnet-SakuraWeb-87080baf-13db-4eec-9e7d-c4846c8026f8</UserSecretsId>
   </PropertyGroup>
 
