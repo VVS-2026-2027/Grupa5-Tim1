@@ -1,0 +1,36 @@
+[
+  {
+    "porukaNaziv": "Nova poruka",
+    "porukaTekst": "Tekst poruke",
+    "proizvodNaziv": "Aloe gel",
+    "proizvodCijena": 18.5,
+    "proizvodVolumen": 250,
+    "sastojakNaziv": "Aloe vera",
+    "sastojakOpis": "Hidratantni sastojak",
+    "sastojakSlika": "aloe-vera.jpg",
+    "rezervacijaId": 42,
+    "datumRezervacije": "2026-11-20T00:00:00",
+    "vrijemeTermina": "2026-11-20T10:30:00",
+    "otkazana": false,
+    "klijentId": "klijent-1",
+    "frizerId": "frizer-1",
+    "uslugaId": 7
+  },
+  {
+    "porukaNaziv": "Aktivna promocija",
+    "porukaTekst": "Popust na usluge",
+    "proizvodNaziv": "Argan ulje",
+    "proizvodCijena": 32,
+    "proizvodVolumen": 100,
+    "sastojakNaziv": "Argan",
+    "sastojakOpis": "Njeguje i regenerise kosu",
+    "sastojakSlika": "argan.png",
+    "rezervacijaId": 99,
+    "datumRezervacije": "2026-11-21T00:00:00",
+    "vrijemeTermina": "2026-11-21T13:00:00",
+    "otkazana": true,
+    "klijentId": "klijent-2",
+    "frizerId": null,
+    "uslugaId": 8
+  }
+]
