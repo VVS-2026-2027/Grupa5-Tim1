@@ -1,4 +1,4 @@
-using SakuraWeb.Models;
+﻿using SakuraWeb.Models;
 
 namespace SakuraWeb.Services;
 
@@ -18,6 +18,13 @@ public sealed class RezervacijaAvailabilityService
         string frizerId,
         IEnumerable<Rezervacija> postojeceRezervacije)
     {
+        if (pocetnoVrijeme.Ticks % TimeSpan.FromMinutes(30).Ticks != 0)
+        {
+            return new AvailabilityResult(
+                false,
+                "Termin mora poceti na puni sat ili pola sata.");
+        }
+
         var brojTermina =
             (int)Math.Ceiling(usluga.trajanje / 30.0);
 
