@@ -1,4 +1,4 @@
-# Unit testovi – projekt SakuraWeb.Tests
+# Unit testovi - projekat SakuraWeb.Tests
 
 ## Sadržaj
 
@@ -50,7 +50,7 @@ Ako je ID `null` ili ne postoji entitet u bazi, očekuje se `NotFoundResult`. Ak
 
 Test provjerava i da ID vraćenog modela odgovara proslijeđenom identifikatoru.
 
-#### Testiranje metode `Create` – GET
+#### Testiranje metode `Create` - GET
 
 Test `Create_Get_ReturnsView` provjerava prikaz forme za kreiranje ankete.
 
@@ -59,7 +59,7 @@ Test provjerava:
 - da metoda vraća `ViewResult`,
 - da `ViewData` sadrži ključno polje `korisnikId`.
 
-#### Testiranje metode `Create` – POST
+#### Testiranje metode `Create` - POST
 
 Za POST varijantu metode `Create` kreirana su dva testna scenarija.
 
@@ -74,7 +74,7 @@ Test `Create_InvalidModel_ReturnsView` dodaje grešku u `ModelState`, kreira nev
 - da entitet nije sačuvan,
 - da je u `ViewData` dostupno `korisnikId`.
 
-#### Testiranje metode `Edit` – GET
+#### Testiranje metode `Edit` - GET
 
 Metoda `Edit` u GET varijanti testirana je sa tri slučaja:
 
@@ -91,7 +91,7 @@ Treći test dodaje entitet u bazu, poziva metodu i provjerava:
 - da vraćeni ID odgovara traženom,
 - da je `korisnikId` dostupno u `ViewData`.
 
-#### Testiranje metode `Edit` – POST
+#### Testiranje metode `Edit` - POST
 
 POST varijanta metode `Edit` testira uspješnu izmjenu i različite granične slučajeve.
 
@@ -112,7 +112,7 @@ Kreira se novi objekat sa istim identifikatorom i izmijenjenom vrijednošću. Na
 
 Test `Edit_Post_DbUpdateConcurrencyException_AnketaDoesNotExist` testira konkurentni izuzetak na nepostojećem entitetu. Entitet se dodaje u `ChangeTracker`, označi se kao izmijenjen i poziva se metoda `Edit`. Očekivani rezultat je `NotFoundResult`.
 
-#### Testiranje metode `Delete` – GET
+#### Testiranje metode `Delete` - GET
 
 Metoda `Delete` u GET varijanti testira:
 
@@ -209,11 +209,11 @@ Ako newsletter postoji, provjerava se:
 - da model predstavlja `Newsletter`,
 - da je vraćen entitet sa ispravnim ID-jem.
 
-#### Testiranje metode `Create` – GET
+#### Testiranje metode `Create` - GET
 
 Test `Create_Get_ReturnsView` provjerava da metoda `Create` u GET varijanti vraća `ViewResult` i prikazuje formu za kreiranje poruke.
 
-#### Testiranje metode `Create` – POST
+#### Testiranje metode `Create` - POST
 
 Metoda `Create` testirana je sa pozitivnim i negativnim scenarijima.
 
@@ -254,7 +254,7 @@ var concreteSenderMock = new Mock<EmailSender>(
 
 Kontroleru se proslijeđuje zamjenski objekat. Test provjerava da poruka ostaje sačuvana i da kontroler vraća `RedirectToActionResult`.
 
-#### Testiranje metode `Edit` – GET
+#### Testiranje metode `Edit` - GET
 
 GET varijanta metode `Edit` testira:
 
@@ -264,7 +264,7 @@ GET varijanta metode `Edit` testira:
 
 Ako je ID nevaljan, očekuje se `NotFoundResult`. Ako newsletter postoji, vraća se pogled sa entitetom.
 
-#### Testiranje metode `Edit` – POST
+#### Testiranje metode `Edit` - POST
 
 POST varijanta testirana je u sljedećim scenarijima:
 
@@ -288,7 +288,7 @@ Provjerava se:
 
 Test `Edit_Post_DbUpdateConcurrencyException_ReturnsNotFound` kreira nepostojeći newsletter i označava ga kao izmijenjenog entiteta. Metoda treba da obradi situaciju kao nepostojeći entitet i vrati `NotFoundResult`.
 
-#### Testiranje metode `Delete` – GET
+#### Testiranje metode `Delete` - GET
 
 Testovi provjeravaju:
 
@@ -346,11 +346,11 @@ Ako usluga postoji, provjerava se da:
 - model predstavlja `Usluga`,
 - vraćeni entitet ima ispravnu vrijednost ID-a.
 
-#### Testiranje metode `Create` – GET
+#### Testiranje metode `Create` - GET
 
 Test `Create_Get_ReturnsView` provjerava da metoda `Create` u GET varijanti vraća `ViewResult`.
 
-#### Testiranje metode `Create` – POST
+#### Testiranje metode `Create` - POST
 
 POST metoda testirana je sa validnim i nevalidnim modelom.
 
@@ -366,7 +366,7 @@ Test `Create_InvalidModel_ReturnsView` dodaje grešku u `ModelState`. Provjerava
 - da je model tipa `Usluga`,
 - da usluga nije sačuvana.
 
-#### Testiranje metode `Edit` – GET
+#### Testiranje metode `Edit` - GET
 
 Testovi GET varijante provjeravaju:
 
@@ -376,7 +376,7 @@ Testovi GET varijante provjeravaju:
 
 Ako ID ne postoji, vraća se `NotFoundResult`. Ako usluga postoji, vraća se `ViewResult` sa ispravnim modelom.
 
-#### Testiranje metode `Edit` – POST
+#### Testiranje metode `Edit` - POST
 
 POST varijanta metode testira:
 
@@ -398,7 +398,7 @@ Test `Edit_Post_ValidModel_UpdatesAndRedirects` kreira postojeću uslugu u bazi,
 
 Test `Edit_Post_ConcurrencyException_WhenNotExists_ReturnsNotFound` provjerava situaciju sa nepostojećom uslugom označenom kao izmijenjen entitet.
 
-#### Testiranje metode `Delete` – GET
+#### Testiranje metode `Delete` - GET
 
 Testovi provjeravaju:
 
