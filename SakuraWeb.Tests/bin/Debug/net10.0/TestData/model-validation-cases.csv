@@ -1,0 +1,23 @@
+ModelField,Value,ExpectedValid
+PorukaNaziv,Obavijest,true
+PorukaNaziv,,false
+PorukaNaziv,Ovaj naziv poruke je namjerno napisan kao izrazito dug tekst koji prelazi maksimalnu dozvoljenu duzinu od stotinu karaktera i zato treba pasti na validaciji,false
+CijenaProizvoda,25.5,true
+CijenaProizvoda,0,false
+CijenaProizvoda,-1,false
+VolumenProizvoda,100,true
+VolumenProizvoda,0,false
+VolumenProizvoda,-1,false
+PoeniProizvoda,0,true
+PoeniProizvoda,12,true
+PoeniProizvoda,13,false
+NazivSastojka,Aloe vera,true
+NazivSastojka,,false
+NazivSastojka,Ovaj naziv sastojka je namjerno napisan kao izrazito dug tekst koji prelazi maksimalnu dozvoljenu duzinu od stotinu karaktera i zato pada na validaciji,false
+OpisSastojka,Hidratantni sastojak,true
+OpisSastojka,,false
+OpisSastojka,Ovaj opis sastojka je namjerno napisan kao izrazito dug tekst koji prelazi maksimalnu dozvoljenu duzinu od stotinu karaktera i zato pada na validaciji,false
+OcjenaRezervacije,1,true
+OcjenaRezervacije,5,true
+OcjenaRezervacije,0,false
+OcjenaRezervacije,6,false
