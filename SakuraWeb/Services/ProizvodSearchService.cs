@@ -5,10 +5,15 @@ namespace SakuraWeb.Services;
 public sealed class ProizvodSearchService
 {
     public IReadOnlyList<Proizvod> Search(
-        IEnumerable<Proizvod> proizvodi,
+        IEnumerable<Proizvod>? proizvodi,
         string? naziv,
         KategorijaProizvoda? kategorija)
     {
+        if (proizvodi is null)
+        {
+            return Array.Empty<Proizvod>();
+        }
+
         var rezultat = proizvodi.AsEnumerable();
         var pretraga = naziv?.Trim();
 

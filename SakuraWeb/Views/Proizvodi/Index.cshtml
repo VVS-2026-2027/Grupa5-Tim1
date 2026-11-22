@@ -76,7 +76,14 @@
         <input type="hidden" id="sort" name="sort" value="@ViewBag.Sort" />
         <input type="hidden" id="kategorija" name="kategorija" value="@ViewBag.Kategorija" />
 
-        <div class="d-flex justify-content-end gap-3">
+        <div class="d-flex justify-content-end align-items-center gap-3">
+
+            <input type="search"
+                   name="pretraga"
+                   value="@ViewBag.Pretraga"
+                   class="form-control sakura-search-input"
+                   maxlength="100"
+                   placeholder="Pretraži proizvode po nazivu" />
 
             <!-- SORT -->
             <div class="dropdown">
@@ -133,6 +140,14 @@
         </div>
     </form>
     <div class="proizvodi-container mx-auto row scroll-container-proizvodi">
+@if (!Model.Any())
+{
+        <div class="col-12 text-center py-5">
+            <p class="fs-5 mb-0">Nema proizvoda koji odgovaraju zadanoj pretrazi i kategoriji.</p>
+        </div>
+}
+else
+{
 @foreach (var item in Model) {
     var naslov = item.naziv;
             <div class="col-sm-3 p-2">
@@ -150,6 +165,7 @@
 
                 </div>
             </div>
+}
 }
     </div>
 </div>
