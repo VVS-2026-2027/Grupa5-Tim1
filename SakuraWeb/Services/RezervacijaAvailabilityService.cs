@@ -8,6 +8,8 @@ public sealed record AvailabilityResult(
 
 public sealed class RezervacijaAvailabilityService
 {
+    private static readonly TimeSpan EarliestAllowedSlot =
+        new(9, 0, 0);
     private static readonly TimeSpan LatestAllowedSlot =
         new(16, 30, 0);
 
@@ -23,6 +25,13 @@ public sealed class RezervacijaAvailabilityService
 
         var potrebniTermini =
             GenerisiTermine(pocetnoVrijeme, brojTermina);
+
+        if (pocetnoVrijeme < EarliestAllowedSlot)
+        {
+            return new AvailabilityResult(
+                false,
+                "Odabrani termin je prije početka radnog vremena salona.");
+        }
 
         if (potrebniTermini.Last() > LatestAllowedSlot)
         {
