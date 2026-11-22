@@ -294,12 +294,10 @@ public class NewsletterControllerTests
     {
         await using var db = TestContext.Create();
         
-        // Moramo imati newsletter i pretplatnika da bi kod došao do slanja emaila
         db.newsletteri.Add(new Newsletter { id = 1, emailAdresa = "posiljalac@test.com", lozinkaZaEmail = "lozinka123" });
         db.korisnici.Add(new Korisnik { Id = "1", emailAdresa = "pretplatnik@test.com", jePretplacenNaNewsletter = true });
         await db.SaveChangesAsync();
 
-        // Pravimo mock konkretne klase EmailSender umjesto interfejsa IEmailSender
         var emailOptions =
     Options.Create(
         new AuthMessageSenderOptions
@@ -322,7 +320,6 @@ var concreteSenderMock =
 
         Assert.IsType<RedirectToActionResult>(result);
         
-        // Provjeravamo da li je newsletter zaista uspješno sačuvan
         Assert.Single(db.poruke);
     }
     [Fact]
@@ -330,7 +327,6 @@ var concreteSenderMock =
     {
         await using var db = TestContext.Create();
         var controller = new NewsletterController(db, Mock.Of<IEmailSender>());
-        // Pokušavamo obrisati ID 999 koji ne postoji, što pokriva else granu
         var result = await controller.DeleteConfirmed(999);
         Assert.IsType<RedirectToActionResult>(result);
     }
