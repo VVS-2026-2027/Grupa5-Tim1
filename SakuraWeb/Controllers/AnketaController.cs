@@ -19,16 +19,10 @@ namespace SakuraWeb.Controllers
             _context = context;
         }
 
-        
         // GET: Anketa
         public async Task<IActionResult> Index()
         {
-            var pitanja = await _context.pitanja
-                .Include(p => p.odgovori)
-                .OrderBy(p => p.id)
-                .ToListAsync();
-
-            return View(pitanja);
+            return View(await DohvatiPitanjaAsync());
         }
 
         // GET: Anketa/Details/5
@@ -53,13 +47,12 @@ namespace SakuraWeb.Controllers
         // GET: Anketa/Create
         public IActionResult Create()
         {
-            ViewData["korisnikId"] = new SelectList(_context.korisnici, "id", "id");
+            PopuniKorisnike();
             return View();
         }
 
         // POST: Anketa/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+  
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("id,poeni,vrijemePopunjavanja,korisnikId")] Anketa anketa)
@@ -70,7 +63,7 @@ namespace SakuraWeb.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["korisnikId"] = new SelectList(_context.korisnici, "id", "id", anketa.korisnikId);
+            PopuniKorisnike(anketa.korisnikId);
             return View(anketa);
         }
 
@@ -87,13 +80,12 @@ namespace SakuraWeb.Controllers
             {
                 return NotFound();
             }
-            ViewData["korisnikId"] = new SelectList(_context.korisnici, "id", "id", anketa.korisnikId);
+            PopuniKorisnike(anketa.korisnikId);
             return View(anketa);
         }
 
         // POST: Anketa/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("id,poeni,vrijemePopunjavanja,korisnikId")] Anketa anketa)
@@ -123,7 +115,7 @@ namespace SakuraWeb.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["korisnikId"] = new SelectList(_context.korisnici, "id", "id", anketa.korisnikId);
+            PopuniKorisnike(anketa.korisnikId);
             return View(anketa);
         }
 
@@ -161,25 +153,13 @@ namespace SakuraWeb.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool AnketaExists(int id)
-        {
-            return _context.ankete.Any(e => e.id == id);
-        }
-
         // GET: Anketa/Popuni - prikazuje anketu sa pitanjima iz baze
         public async Task<IActionResult> Popuni()
         {
-            var pitanja = await _context.pitanja
-                .Include(p => p.odgovori)
-                .OrderBy(p => p.id)
-                .ToListAsync();
-
-            return View(pitanja);
+            return View(await DohvatiPitanjaAsync());
         }
 
-        // POST: Anketa/Preporuka - racuna preporuku na osnovu odabranih odgovora
-        [HttpPost]
-        // POST: Anketa/Preporuka
+        // POST: Anketa/Preporuka - računa preporuku na osnovu odabranih odgovora
         [HttpPost]
         public async Task<IActionResult> Preporuka([FromBody] List<int> odgovorIds)
         {
@@ -189,30 +169,44 @@ namespace SakuraWeb.Controllers
 
             var proizvodi = await _context.proizvodi.ToListAsync();
 
-            Proizvod? NajbliziProfilu(KategorijaProizvoda kategorija)
+            Proizvod? NajbliziProfilu(params KategorijaProizvoda[] kategorije)
             {
                 return proizvodi
-                    .Where(p => p.kategorija == kategorija)
+                    .Where(p => kategorije.Contains(p.kategorija))
                     .OrderBy(p => Math.Abs(p.poeniPr - ukupnoBodova))
                     .FirstOrDefault();
             }
 
-            var sampon = NajbliziProfilu(KategorijaProizvoda.Šampon);
-            var regenerator = NajbliziProfilu(KategorijaProizvoda.Regenerator);
+            static object? UPreporuku(Proizvod? p) =>
+                p == null ? null : new { id = p.id, naziv = p.naziv, slika = p.slikaPutanja };
 
-            var maskaUlje = proizvodi
-                .Where(p => p.kategorija == KategorijaProizvoda.Maska || p.kategorija == KategorijaProizvoda.Ulje)
-                .OrderBy(p => Math.Abs(p.poeniPr - ukupnoBodova))
-                .FirstOrDefault();
-
-            var preporuke = new List<object?>
-    {
-        sampon == null ? null : new { id = sampon.id, naziv = sampon.naziv, slika = sampon.slikaPutanja },
-        regenerator == null ? null : new { id = regenerator.id, naziv = regenerator.naziv, slika = regenerator.slikaPutanja },
-        maskaUlje == null ? null : new { id = maskaUlje.id, naziv = maskaUlje.naziv, slika = maskaUlje.slikaPutanja }
-    }.Where(p => p != null);
+            var preporuke = new[]
+            {
+                UPreporuku(NajbliziProfilu(KategorijaProizvoda.Šampon)),
+                UPreporuku(NajbliziProfilu(KategorijaProizvoda.Regenerator)),
+                UPreporuku(NajbliziProfilu(KategorijaProizvoda.Maska, KategorijaProizvoda.Ulje))
+            }.Where(p => p != null);
 
             return Json(preporuke);
+        }
+
+
+        private Task<List<Pitanje>> DohvatiPitanjaAsync()
+        {
+            return _context.pitanja
+                .Include(p => p.odgovori)
+                .OrderBy(p => p.id)
+                .ToListAsync();
+        }
+
+        private void PopuniKorisnike(string? odabraniId = null)
+        {
+            ViewData["korisnikId"] = new SelectList(_context.korisnici, "id", "id", odabraniId);
+        }
+
+        private bool AnketaExists(int id)
+        {
+            return _context.ankete.Any(e => e.id == id);
         }
     }
 }

@@ -322,7 +322,6 @@ var concreteSenderMock =
 
         Assert.IsType<RedirectToActionResult>(result);
         
-        // Provjeravamo da li je newsletter zaista uspješno sačuvan
         Assert.Single(db.poruke);
     }
     [Fact]
@@ -330,7 +329,6 @@ var concreteSenderMock =
     {
         await using var db = TestContext.Create();
         var controller = new NewsletterController(db, Mock.Of<IEmailSender>());
-        // Pokušavamo obrisati ID 999 koji ne postoji, što pokriva else granu
         var result = await controller.DeleteConfirmed(999);
         Assert.IsType<RedirectToActionResult>(result);
     }

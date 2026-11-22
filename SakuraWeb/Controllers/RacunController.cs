@@ -62,8 +62,7 @@ namespace SakuraWeb.Controllers
         }
 
         // POST: Racun/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+ 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrator")]
@@ -71,27 +70,22 @@ namespace SakuraWeb.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Sync custom fields to IdentityUser fields
                 korisnik.UserName = korisnik.korisnickoIme;
                 korisnik.Email = korisnik.emailAdresa;
-                korisnik.EmailConfirmed = true; // Employee emails don't need confirmation
-                korisnik.jePretplacenNaNewsletter = false; // Employees don't subscribe to newsletter
+                korisnik.EmailConfirmed = true; 
+                korisnik.jePretplacenNaNewsletter = false; 
 
-                // Create user with hashed password using UserManager
                 var result = await _userManager.CreateAsync(korisnik, korisnik.lozinka);
 
                 if (result.Succeeded)
                 {
-                    // Fetch the user back from DB to get the actual hashed password
                     var createdUser = await _userManager.FindByIdAsync(korisnik.Id);
                     if (createdUser != null)
                     {
-                        // Copy the hashed password from DB to lozinka field
                         createdUser.lozinka = createdUser.PasswordHash;
                         await _userManager.UpdateAsync(createdUser);
                     }
 
-                    // Assign "Frizer" role (if the role exists)
                     if (!string.IsNullOrEmpty(korisnik.ulogaKorisnika.ToString()))
                     {
                         await _userManager.AddToRoleAsync(korisnik, korisnik.ulogaKorisnika.ToString());
@@ -100,7 +94,6 @@ namespace SakuraWeb.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Add error messages if user creation failed
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -127,7 +120,6 @@ namespace SakuraWeb.Controllers
         }
 
         // POST: Racun/Edit/5
-        // Reset password action
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrator")]
@@ -144,16 +136,13 @@ namespace SakuraWeb.Controllers
                 return NotFound();
             }
 
-            // Generate a random strong password
             var randomPassword = GenerateRandomPassword();
 
-            // Reset the user's password
             var token = await _userManager.GeneratePasswordResetTokenAsync(korisnik);
             var result = await _userManager.ResetPasswordAsync(korisnik, token, randomPassword);
 
             if (result.Succeeded)
             {
-                // Sync lozinka with the new password hash
                 var updatedUser = await _userManager.FindByIdAsync(korisnik.Id);
                 if (updatedUser != null)
                 {
@@ -161,7 +150,6 @@ namespace SakuraWeb.Controllers
                     await _userManager.UpdateAsync(updatedUser);
                 }
 
-                // Send email with new password
                 var emailSubject = "[Sakura] Reset lozinke";
                 var emailBody = $"Administrator je resetovao vašu lozinku i ona sada glasi: {randomPassword}. Molimo vas da se prijavite na stranicu i promijenite je.";
                 await _emailSender.SendEmailAsync(korisnik.emailAdresa, emailSubject, emailBody);
@@ -170,13 +158,10 @@ namespace SakuraWeb.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // If reset failed, show error
             return RedirectToAction(nameof(Edit), new { id = id });
         }
 
-        /// <summary>
-        /// Generate a random strong password
-        /// </summary>
+
         private string GenerateRandomPassword()
         {
             var options = _userManager.PasswordHasher;
@@ -188,20 +173,17 @@ namespace SakuraWeb.Controllers
             var random = new Random();
             var password = new System.Text.StringBuilder();
 
-            // Add at least one character from each category
             password.Append(uppercase[random.Next(uppercase.Length)]);
             password.Append(lowercase[random.Next(lowercase.Length)]);
             password.Append(digits[random.Next(digits.Length)]);
             password.Append(special[random.Next(special.Length)]);
 
-            // Fill the rest with random characters
             const string allChars = uppercase + lowercase + digits + special;
             for (int i = password.Length; i < 12; i++)
             {
                 password.Append(allChars[random.Next(allChars.Length)]);
             }
 
-            // Shuffle the password
             var passwordArray = password.ToString().ToCharArray();
             for (int i = passwordArray.Length - 1; i > 0; i--)
             {
@@ -245,11 +227,9 @@ namespace SakuraWeb.Controllers
                 var email = korisnik.emailAdresa;
                 var username = korisnik.korisnickoIme;
 
-                // Remove the user
                 _context.korisnici.Remove(korisnik);
                 await _context.SaveChangesAsync();
 
-                // Send deletion notification email
                 var emailSubject = "[Sakura] Vaš račun je obrisan";
                 var emailBody = $"Administrator je obrisao vaš račun. Razlog: {razlog}";
                 await _emailSender.SendEmailAsync(email, emailSubject, emailBody);

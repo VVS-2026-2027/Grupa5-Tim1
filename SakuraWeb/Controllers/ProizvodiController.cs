@@ -92,7 +92,7 @@ public ProizvodiController(
             var proizvod = await _context.proizvodi
                 .Include(p => p.ProizvodSastojci)
                     .ThenInclude(ps => ps.sastojak)
-                //.FirstOrDefaultAsync(p => p.id == id)
+
                 .Include(p => p.ProizvodBenefiti)
                     .ThenInclude(pb => pb.benefit)
                 .FirstOrDefaultAsync(p => p.id == id);
@@ -245,10 +245,9 @@ public ProizvodiController(
                         postojeci.slikaPutanja = uniqueFileName;
                     }
         
-                    // Update Benefiti veze
                     var postojeceBenefiti = _context.proizvodiBenefiti.Where(pb => pb.proizvodId == id);
                     _context.proizvodiBenefiti.RemoveRange(postojeceBenefiti);
-                    await _context.SaveChangesAsync(); // flush removal, detach tracked entities
+                    await _context.SaveChangesAsync(); 
                     
                     if (benefitIds != null)
                     {
@@ -259,10 +258,9 @@ public ProizvodiController(
                     }
                     await _context.SaveChangesAsync();
                     
-                    // Update Sastojci veze
                     var postojeciSastojci = _context.proizvodiSastojci.Where(ps => ps.proizvodId == id);
                     _context.proizvodiSastojci.RemoveRange(postojeciSastojci);
-                    await _context.SaveChangesAsync(); // flush removal, detach tracked entities
+                    await _context.SaveChangesAsync(); 
                     
                     if (sastojakIds != null)
                     {

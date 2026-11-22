@@ -124,6 +124,13 @@ public class AnketaControllerTests
 
         Assert.IsType<RedirectToActionResult>(result);
         Assert.Single(db.ankete);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+         Assert.Equal("Index", redirect.ActionName);   
+
+        var saved = Assert.Single(db.ankete);
+        Assert.Equal(5, saved.poeni);
+        Assert.Equal("user", saved.korisnikId);
     }
 
     [Fact]
@@ -214,7 +221,6 @@ public class AnketaControllerTests
 
         var controller = new AnketaController(db);
 
-        // Detach previous tracking
         db.ChangeTracker.Clear();
 
         var updatedAnketa = new Anketa { id = 1, poeni = 10 };
@@ -222,7 +228,8 @@ public class AnketaControllerTests
 
         Assert.IsType<RedirectToActionResult>(result);
         var dbAnketa = await db.ankete.FindAsync(1);
-        Assert.Equal(10, dbAnketa.poeni);
+        Assert.NotNull(dbAnketa);
+        Assert.Equal(10, dbAnketa!.poeni);
     }
 
     [Fact]
@@ -232,7 +239,6 @@ public class AnketaControllerTests
         var controller = new AnketaController(db);
         var anketa = new Anketa { id = 99 };
 
-        // Simulate concurrency exception by modifying a tracked entity that doesn't exist in DB
         db.ankete.Attach(anketa);
         db.Entry(anketa).State = EntityState.Modified;
 

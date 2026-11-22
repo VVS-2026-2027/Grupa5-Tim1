@@ -8,16 +8,16 @@ namespace SakuraWeb.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ApplicationDbContext _context; // AI-assisted
+        private readonly ApplicationDbContext _context; 
 
         public HomeController(ApplicationDbContext context)
         {
-            _context = context; // AI-assisted
+            _context = context; 
         }
 
         public IActionResult Index()
         {
-            var model = new HomeIndexViewModel // AI-assisted 
+            var model = new HomeIndexViewModel 
             {
                 KorisniciCount = _context.korisnici.Count(),
                 RezervacijeCount = _context.rezervacije.Count(),

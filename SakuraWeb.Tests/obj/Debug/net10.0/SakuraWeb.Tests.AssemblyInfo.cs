@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SakuraWeb.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+90e27264cfccd94d7d76fec38ddd4108ed2257ae")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b78a17e395e2461a6cacc97e2566372429ef5fbc")]
 [assembly: System.Reflection.AssemblyProductAttribute("SakuraWeb.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SakuraWeb.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
