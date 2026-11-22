@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SakuraWeb.Controllers;
 using SakuraWeb.Models;
+using SakuraWeb.Services;
 using SakuraWeb.Tests.Helpers;
 
 namespace SakuraWeb.Tests.Controllers;
@@ -82,6 +83,121 @@ public class RezervacijaControllerTests
                 It.IsAny<string>(),
                 It.IsAny<string>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_BeforeOpeningHours_ReturnsViewWithoutSaving()
+    {
+        await using var db = TestContext.Create();
+        var date = new DateTime(2026, 11, 16);
+        var client = CreateUser("client", Uloga.Klijent, "client@test.com");
+        var stylist = CreateUser("stylist", Uloga.Frizer, "stylist@test.com");
+        var service = new Usluga
+        {
+            id = 1,
+            naziv = "Šišanje",
+            opis = "Opis",
+            cijena = 10,
+            trajanje = 30
+        };
+        db.korisnici.AddRange(client, stylist);
+        db.usluge.Add(service);
+        await db.SaveChangesAsync();
+
+        var email = new Mock<IEmailSender>();
+        email.Setup(item => item.SendEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        var controller = new RezervacijaController(
+            db, email.Object, new RezervacijaAvailabilityService());
+        ControllerContextFactory.SetUser(controller, client.Id, "Klijent");
+
+        var result = await controller.Create(
+            date, new TimeSpan(8, 30, 0), service.id, stylist.Id);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.False(controller.ModelState.IsValid);
+        Assert.Empty(db.rezervacije);
+        email.Verify(item => item.SendEmailAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_RejectsOccupiedSlotAndAcceptsFreeSlot()
+    {
+        await using var db = TestContext.Create();
+        var date = new DateTime(2026, 11, 16);
+        var client = CreateUser("client", Uloga.Klijent, "client@test.com");
+        var stylist = CreateUser("stylist", Uloga.Frizer, "stylist@test.com");
+        var occupiedService = new Usluga
+        {
+            id = 1,
+            naziv = "Duga usluga",
+            opis = "Opis",
+            cijena = 20,
+            trajanje = 60
+        };
+        var requestedService = new Usluga
+        {
+            id = 2,
+            naziv = "Kratka usluga",
+            opis = "Opis",
+            cijena = 10,
+            trajanje = 30
+        };
+
+        db.korisnici.AddRange(client, stylist);
+        db.usluge.AddRange(occupiedService, requestedService);
+        db.rezervacije.Add(new Rezervacija
+        {
+            id = 1,
+            datumRezervacije = date,
+            vrijemeTermina = date.AddHours(10),
+            klijentId = client.Id,
+            frizerId = stylist.Id,
+            uslugaId = occupiedService.id,
+            usluga = occupiedService,
+            otkazana = false
+        });
+        await db.SaveChangesAsync();
+
+        var email = new Mock<IEmailSender>();
+        email.Setup(item => item.SendEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
+        var availabilityService = new RezervacijaAvailabilityService();
+
+        var busyController = new RezervacijaController(
+            db, email.Object, availabilityService);
+        ControllerContextFactory.SetUser(busyController, client.Id, "Klijent");
+
+        var busyResult = await busyController.Create(
+            date, new TimeSpan(10, 30, 0), requestedService.id, stylist.Id);
+
+        Assert.IsType<ViewResult>(busyResult);
+        Assert.Contains(
+            "Odabrani termin je zauzet.",
+            busyController.ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Single()
+                .ErrorMessage);
+        Assert.Single(db.rezervacije);
+        email.Verify(item => item.SendEmailAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+        var freeController = new RezervacijaController(
+            db, email.Object, availabilityService);
+        ControllerContextFactory.SetUser(freeController, client.Id, "Klijent");
+
+        var freeResult = await freeController.Create(
+            date, new TimeSpan(11, 0, 0), requestedService.id, stylist.Id);
+
+        Assert.IsType<RedirectToActionResult>(freeResult);
+        Assert.Equal(2, db.rezervacije.Count());
+        email.Verify(item => item.SendEmailAsync(
+            "client@test.com",
+            "[Sakura] Uspješna rezervacija",
+            It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
