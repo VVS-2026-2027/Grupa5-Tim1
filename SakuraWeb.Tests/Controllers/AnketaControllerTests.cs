@@ -214,7 +214,6 @@ public class AnketaControllerTests
 
         var controller = new AnketaController(db);
 
-        // Detach previous tracking
         db.ChangeTracker.Clear();
 
         var updatedAnketa = new Anketa { id = 1, poeni = 10 };
@@ -232,7 +231,6 @@ public class AnketaControllerTests
         var controller = new AnketaController(db);
         var anketa = new Anketa { id = 99 };
 
-        // Simulate concurrency exception by modifying a tracked entity that doesn't exist in DB
         db.ankete.Attach(anketa);
         db.Entry(anketa).State = EntityState.Modified;
 
