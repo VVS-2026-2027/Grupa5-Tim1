@@ -1,4 +1,4 @@
-using SakuraWeb.Models;
+﻿using SakuraWeb.Models;
 
 namespace SakuraWeb.Services;
 
@@ -8,6 +8,9 @@ public sealed record AvailabilityResult(
 
 public sealed class RezervacijaAvailabilityService
 {
+    private static readonly TimeSpan EarliestAllowedSlot =
+        new(9, 0, 0);
+
     private static readonly TimeSpan LatestAllowedSlot =
         new(16, 30, 0);
 
@@ -18,13 +21,21 @@ public sealed class RezervacijaAvailabilityService
         string frizerId,
         IEnumerable<Rezervacija> postojeceRezervacije)
     {
+        if (pocetnoVrijeme.Ticks % TimeSpan.FromMinutes(30).Ticks != 0)
+        {
+            return new AvailabilityResult(
+                false,
+                "Termin mora poceti na puni sat ili pola sata.");
+        }
+
         var brojTermina =
             (int)Math.Ceiling(usluga.trajanje / 30.0);
 
         var potrebniTermini =
             GenerisiTermine(pocetnoVrijeme, brojTermina);
 
-        if (potrebniTermini.Last() > LatestAllowedSlot)
+        if (pocetnoVrijeme < EarliestAllowedSlot ||
+            potrebniTermini.Last() > LatestAllowedSlot)
         {
             return new AvailabilityResult(
                 false,
