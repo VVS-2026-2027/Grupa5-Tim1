@@ -9,6 +9,7 @@ using SakuraWeb.Controllers;
 using SakuraWeb.Models;
 using SakuraWeb.Tests.Helpers;
 using System.Reflection;
+using System.Text.Json;
 
 namespace SakuraWeb.Tests.Controllers;
 
@@ -28,35 +29,60 @@ public class RacunControllerTests
             null);
     }
 
-    [Fact]
-    public async Task Details_ReturnsNotFoundForNullId()
+    public static IEnumerable<object[]> ResetPasswordMissingUserCases()
     {
-        await using var db = TestContext.Create();
+        var dataPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "TestData",
+            "racun-reset-password-missing-user.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(dataPath));
+        var cases = new List<object[]>();
 
-        var controller =
-            new RacunController(
-                db,
-                CreateManager().Object,
-                Mock.Of<IEmailSender>());
+        foreach (var row in document.RootElement.EnumerateArray())
+        {
+            var idElement = row.GetProperty("userId");
+            var userId = idElement.ValueKind == JsonValueKind.Null
+                ? null
+                : idElement.GetString();
+            var expectedFindByIdCalls = row.GetProperty("expectedFindByIdCalls").GetInt32();
+            cases.Add(new object[] { userId!, expectedFindByIdCalls });
+        }
 
-        var result = await controller.Details(null);
-
-        Assert.IsType<NotFoundResult>(result);
+        return cases;
     }
 
-    [Fact]
-    public async Task Details_ReturnsNotFoundForUnknownUser()
+    public static IEnumerable<object[]> DetailsMissingUserCases()
+    {
+        var dataPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "TestData",
+            "racun-details-missing-user.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(dataPath));
+        var cases = new List<object[]>();
+
+        foreach (var row in document.RootElement.EnumerateArray())
+        {
+            var idElement = row.GetProperty("userId");
+            var userId = idElement.ValueKind == JsonValueKind.Null
+                ? null
+                : idElement.GetString();
+            cases.Add(new object[] { userId! });
+        }
+
+        return cases;
+    }
+
+    [Theory]
+    [MemberData(nameof(DetailsMissingUserCases))]
+    public async Task Details_MissingUser_ReturnsNotFound(string? id)
     {
         await using var db = TestContext.Create();
+        var controller = new RacunController(
+            db,
+            CreateManager().Object,
+            Mock.Of<IEmailSender>());
 
-        var controller =
-            new RacunController(
-                db,
-                CreateManager().Object,
-                Mock.Of<IEmailSender>());
-
-        var result =
-            await controller.Details("unknown");
+        var result = await controller.Details(id);
 
         Assert.IsType<NotFoundResult>(result);
     }
@@ -140,28 +166,6 @@ public class RacunControllerTests
             Times.Once);
     }
 
-    [Fact]
-    public async Task ResetPassword_UnknownUser_ReturnsNotFound()
-    {
-        await using var db = TestContext.Create();
-
-        var manager = CreateManager();
-
-        manager
-            .Setup(item => item.FindByIdAsync("missing"))
-            .ReturnsAsync((Korisnik?)null);
-
-        var controller =
-            new RacunController(
-                db,
-                manager.Object,
-                Mock.Of<IEmailSender>());
-
-        var result =
-            await controller.ResetPassword("missing");
-
-        Assert.IsType<NotFoundResult>(result);
-    }
 
     [Fact]
     public async Task Index_ReturnsViewWithAllUsers()
@@ -291,17 +295,26 @@ public class RacunControllerTests
         Assert.Same(user, view.Model);
     }
 
-    [Fact]
-    public async Task ResetPassword_NullIdReturnsNotFound()
+    [Theory]
+    [MemberData(nameof(ResetPasswordMissingUserCases))]
+    public async Task ResetPassword_MissingUser_ReturnsNotFound(
+        string? id,
+        int expectedFindByIdCalls)
     {
         await using var db = TestContext.Create();
         var manager = CreateManager();
+        if (id is not null)
+        {
+            manager.Setup(item => item.FindByIdAsync(id))
+                .ReturnsAsync((Korisnik?)null);
+        }
 
         var result = await CreateController(db, manager.Object)
-            .ResetPassword(null!);
+            .ResetPassword(id!);
 
         Assert.IsType<NotFoundResult>(result);
-        manager.Verify(item => item.FindByIdAsync(It.IsAny<string>()), Times.Never);
+        manager.Verify(item => item.FindByIdAsync(It.IsAny<string>()),
+            Times.Exactly(expectedFindByIdCalls));
     }
 
     [Fact]

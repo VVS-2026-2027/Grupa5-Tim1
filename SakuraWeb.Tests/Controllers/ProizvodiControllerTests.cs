@@ -119,26 +119,16 @@ public class ProizvodiControllerTests
         Assert.Equal(1, model[0].id);
     }
 
-    [Fact]
-    public async Task Details_ReturnsNotFoundForNullId()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(999)]
+    public async Task Details_MissingId_ReturnsNotFound(int? id)
     {
         await using var db = TestContext.Create();
 
         var controller = CreateController(db);
 
-        var result = await controller.Details(null);
-
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Fact]
-    public async Task Details_ReturnsNotFoundForUnknownId()
-    {
-        await using var db = TestContext.Create();
-
-        var controller = CreateController(db);
-
-        var result = await controller.Details(999);
+        var result = await controller.Details(id);
 
         Assert.IsType<NotFoundResult>(result);
     }
